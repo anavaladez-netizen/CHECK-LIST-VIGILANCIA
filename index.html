@@ -11,7 +11,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
-  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md border border-gray-200">
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md border border-gray-200">
     <!-- Encabezado -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b gap-4">
       <div>
@@ -219,15 +219,25 @@
           </div>
         </div>
 
-        <!-- Firmas y Nombres -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+        <!-- Vigilantes Saliente / Entrante -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t bg-gray-50 p-4 rounded">
           <div>
             <label class="block text-sm font-bold text-gray-700">Vigilante Saliente:</label>
-            <input type="text" id="vigilante_saliente" class="w-full p-2 border rounded mt-1" placeholder="Nombre completo" />
+            <select id="vigilante_saliente" class="w-full p-2 border rounded mt-1 bg-white">
+              <option value="">-- Seleccionar Vigilante --</option>
+              <option value="Juan Manuel Gómez Garay">Juan Manuel Gómez Garay</option>
+              <option value="Marcelo Lara Suarez">Marcelo Lara Suarez</option>
+              <option value="Vicente Nuñez Robledo">Vicente Nuñez Robledo</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm font-bold text-gray-700">Vigilante Entrante:</label>
-            <input type="text" id="vigilante_entrante" class="w-full p-2 border rounded mt-1" placeholder="Nombre completo" />
+            <select id="vigilante_entrante" class="w-full p-2 border rounded mt-1 bg-white">
+              <option value="">-- Seleccionar Vigilante --</option>
+              <option value="Juan Manuel Gómez Garay">Juan Manuel Gómez Garay</option>
+              <option value="Marcelo Lara Suarez">Marcelo Lara Suarez</option>
+              <option value="Vicente Nuñez Robledo">Vicente Nuñez Robledo</option>
+            </select>
           </div>
         </div>
 
@@ -253,26 +263,80 @@
               <th class="p-3 border">Fecha / Hora</th>
               <th class="p-3 border">Vigilante Turno</th>
               <th class="p-3 border">Saliente / Entrante</th>
-              <th class="p-3 border">Puntos Completados</th>
+              <th class="p-3 border">Cumplimiento</th>
+              <th class="p-3 border text-center">Acciones</th>
             </tr>
           </thead>
           <tbody id="tabla-historial">
-            <!-- Los registros se cargan dinámicamente -->
+            <!-- Carga dinámica -->
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <!-- MODAL PARA VER DETALLES DEL CHECKLIST -->
+  <div id="modal-detalle" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+      <div class="flex justify-between items-center border-b pb-3 mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-blue-900" id="modal-titulo">Detalle del Checklist</h3>
+          <p class="text-xs text-gray-500" id="modal-subtitulo"></p>
+        </div>
+        <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+      </div>
+      
+      <div id="modal-contenido" class="space-y-4">
+        <!-- Lista de puntos renderizada -->
+      </div>
+
+      <div class="mt-6 border-t pt-4 text-right">
+        <button onclick="cerrarModal()" class="bg-blue-800 hover:bg-blue-900 text-white px-5 py-2 rounded font-semibold text-sm">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // CREDENCIALES CONFIGURADAS DE SUPABASE
+    // CONFIGURACIÓN INTERNA DE CREDENCIALES
     const SUPABASE_URL = "https://waueklmhwysbeqmbbmve.supabase.co"; 
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhdWVrbG1od3lzYmVxbWJibXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTY0MzYsImV4cCI6MjEwNzQ5MjQzNn0.tRM1m_2Atx8bujtk7udNTF8oE6nbnXSHFtQJXmaqV3E";
     
+    // CLAVE DE ADMINISTRACIÓN PARA ELIMINAR
+    const ADMIN_PASS = "admin123";
+
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let datosHistorial = [];
 
-    // Inicializar fecha y hora actuales
+    const MAPA_PREGUNTAS = {
+      llegada_puntual: "Llegada puntual y registro de asistencia",
+      limpieza_area: "Limpieza inicial del área de trabajo (Caseta, pasillos y puertas)",
+      revisar_equipos: "Revisar y reportar el estado de los equipos (Radio, linternas)",
+      registrar_visitantes: "Registrar visitantes",
+      negar_acceso_inconvenientes: "Negar acceso a personas inconvenientes",
+      usar_laser_advertencias: "Usar láser para advertencias externas",
+      verificar_formularios: "Verificar formularios de autorización de salida/entrada",
+      revisar_documentos_entrega: "Revisar documentos de entrega/recepción",
+      marcar_mercancia: "Marcar mercancía con plumón especial",
+      monitoreo_camaras: "Monitoreo continuo de cámaras de seguridad",
+      verificar_apagado_luces: "Verificar apagado de luces y equipos",
+      recorrido_interno: "Recorrido interno (Escaneo QR)",
+      recorrido_externo: "Recorrido externo (Escaneo QR)",
+      ronda_nocturna_10pm: "Ronda nocturna 10pm (Escaneo QR)",
+      revision_mensual_lockers: "Revisión mensual de lockers",
+      control_sellos_seguridad: "Control de sellos de seguridad",
+      inventario_equipo_clave: "Inventario de equipo clave",
+      registrar_bitacora: "Registrar todas las novedades en bitácora",
+      documentar_siniestros: "Documentar siniestros e incidentes graves",
+      llamar_emergencia: "Llamar números de emergencia si es necesario",
+      notificar_jefe_departamento: "Notificar al jefe de departamento ante siniestros",
+      actualizar_bitacora_final: "Actualizar bitácora final",
+      entregar_equipos_llaves: "Entregar equipos y llaves",
+      informar_pendientes: "Informar de pendientes al vigilante entrante",
+      realizar_firmar_documento: "Realizar y firmar documento de entrega"
+    };
+
     document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
     document.getElementById('hora').value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
@@ -317,7 +381,6 @@
         vigilante_entrante: document.getElementById('vigilante_entrante').value,
       };
 
-      // Recopilar respuestas de los checkboxes
       const checkboxes = document.querySelectorAll('.chk-item');
       checkboxes.forEach(chk => {
         registro[chk.name] = chk.checked;
@@ -331,7 +394,7 @@
       if (error) {
         alert("Error al guardar en Supabase: " + error.message);
       } else {
-        alert(" Check list guardado con éxito en Supabase.");
+        alert("Check list guardado con éxito.");
         document.getElementById('checklist-form').reset();
         document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
         document.getElementById('hora').value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -340,41 +403,102 @@
 
     async function cargarHistorial() {
       const tbody = document.getElementById('tabla-historial');
-      tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Cargando registros desde Supabase...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Cargando registros desde Supabase...</td></tr>';
 
       const { data, error } = await supabaseClient.from('checklist_vigilancia').select('*').order('created_at', { ascending: false });
 
       if (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error al cargar historial: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al cargar historial: ${error.message}</td></tr>`;
         return;
       }
 
       datosHistorial = data || [];
 
       if (datosHistorial.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No hay registros aún en la base de datos.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay registros aún.</td></tr>';
         return;
       }
 
       tbody.innerHTML = '';
       datosHistorial.forEach(item => {
-        const totalPuntos = 25;
+        const totalPuntos = Object.keys(MAPA_PREGUNTAS).length;
         let cumplidos = 0;
-        Object.keys(item).forEach(k => { if(item[k] === true) cumplidos++; });
+        Object.keys(MAPA_PREGUNTAS).forEach(clave => { if(item[clave] === true) cumplidos++; });
 
         const tr = document.createElement('tr');
         tr.className = "border-b hover:bg-gray-50";
         tr.innerHTML = `
           <td class="p-3 border font-medium text-gray-900">${item.fecha || ''} ${item.hora || ''}</td>
-          <td class="p-3 border">${item.vigilante_turno || '-'}</td>
+          <td class="p-3 border font-semibold">${item.vigilante_turno || '-'}</td>
           <td class="p-3 border text-xs">
             <div><b>Saliente:</b> ${item.vigilante_saliente || '-'}</div>
             <div><b>Entrante:</b> ${item.vigilante_entrante || '-'}</div>
           </td>
           <td class="p-3 border font-semibold text-blue-700">${cumplidos} / ${totalPuntos} cumplidos</td>
+          <td class="p-3 border text-center space-x-2">
+            <button onclick="verDetalle(${item.id})" title="Ver Detalle" class="bg-blue-100 hover:bg-blue-200 text-blue-800 p-2 rounded">
+              👁️
+            </button>
+            <button onclick="eliminarRegistro(${item.id})" title="Eliminar Registro (Solo Administrador)" class="bg-red-100 hover:bg-red-200 text-red-800 p-2 rounded">
+              🗑️
+            </button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function verDetalle(id) {
+      const registro = datosHistorial.find(r => r.id === id);
+      if (!registro) return;
+
+      document.getElementById('modal-titulo').innerText = `Checklist: ${registro.vigilante_turno}`;
+      document.getElementById('modal-subtitulo').innerText = `Fecha: ${registro.fecha} - Hora: ${registro.hora} | Saliente: ${registro.vigilante_saliente || 'N/A'} | Entrante: ${registro.vigilante_entrante || 'N/A'}`;
+
+      const contenedor = document.getElementById('modal-contenido');
+      contenedor.innerHTML = '';
+
+      Object.keys(MAPA_PREGUNTAS).forEach(clave => {
+        const cumplio = registro[clave] === true;
+        const div = document.createElement('div');
+        div.className = `flex justify-between items-center p-2 rounded text-sm border ${cumplio ? 'bg-green-50 border-green-200 text-green-900' : 'bg-red-50 border-red-200 text-red-900'}`;
+        div.innerHTML = `
+          <span>${MAPA_PREGUNTAS[clave]}</span>
+          <span class="font-bold text-base">${cumplio ? '✓ SI' : '✗ NO'}</span>
+        `;
+        contenedor.appendChild(div);
+      });
+
+      document.getElementById('modal-detalle').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-detalle').classList.add('hidden');
+    }
+
+    // ELIMINACIÓN RESTRINGIDA A ADMINISTRADOR
+    async function eliminarRegistro(id) {
+      const clave = prompt("Para eliminar este registro ingresa la contraseña de Administrador:");
+      
+      if (clave === null) return; // Cancelado por el usuario
+
+      if (clave !== ADMIN_PASS) {
+        alert("Acceso denegado: Contraseña de administrador incorrecta.");
+        return;
+      }
+
+      if (!confirm("Contraseña correcta. ¿Confirmas que deseas borrar permanentemente este registro de Supabase?")) {
+        return;
+      }
+
+      const { error } = await supabaseClient.from('checklist_vigilancia').delete().eq('id', id);
+
+      if (error) {
+        alert("Error al eliminar: " + error.message);
+      } else {
+        alert("Registro eliminado con éxito.");
+        cargarHistorial();
+      }
     }
 
     function exportarExcel() {
