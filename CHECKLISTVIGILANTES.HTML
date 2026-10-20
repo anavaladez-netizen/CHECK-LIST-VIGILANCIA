@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check List Vigilancia - Grupo Farsanmar</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md border border-gray-200">
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b gap-4">
+      <div>
+        <h1 class="text-xl font-bold text-blue-900">ENTREGA DE TURNO - CHECK LIST VIGILANCIA</h1>
+        <p class="text-sm text-gray-600 font-semibold">GRUPO FARSANMAR | SANTA MARÍA EXPRESS</p>
+      </div>
+      <div class="space-x-2 flex">
+        <button id="btn-formulario" onclick="cambiarVista('formulario')" class="px-4 py-2 rounded text-sm font-semibold bg-blue-800 text-white">
+          Formulario
+        </button>
+        <button id="btn-historial" onclick="cambiarVista('historial')" class="px-4 py-2 rounded text-sm font-semibold bg-gray-200 text-gray-700">
+          Historial
+        </button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN FORMULARIO -->
+    <div id="vista-formulario">
+      <form id="checklist-form" onsubmit="guardarRegistro(event)" class="space-y-6">
+        
+        <!-- Fecha y Hora -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded">
+          <div>
+            <label class="block text-sm font-bold text-gray-700">Fecha:</label>
+            <input type="date" id="fecha" class="w-full p-2 border rounded mt-1" required />
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700">Hora:</label>
+            <input type="time" id="hora" class="w-full p-2 border rounded mt-1" required />
+          </div>
+        </div>
+
+        <!-- Vigilante en Turno -->
+        <div class="bg-yellow-50 p-4 rounded border border-yellow-300">
+          <label class="block text-sm font-bold text-gray-800 mb-2">Vigilante en Turno:</label>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <label class="flex items-center space-x-2 text-sm text-gray-800 cursor-pointer">
+              <input type="radio" name="vigilante_turno" value="Juan Manuel Gómez Garay" required class="h-4 w-4 text-blue-600">
+              <span>Juan Manuel Gómez Garay</span>
+            </label>
+            <label class="flex items-center space-x-2 text-sm text-gray-800 cursor-pointer">
+              <input type="radio" name="vigilante_turno" value="Marcelo Lara Suarez" class="h-4 w-4 text-blue-600">
+              <span>Marcelo Lara Suarez</span>
+            </label>
+            <label class="flex items-center space-x-2 text-sm text-gray-800 cursor-pointer">
+              <input type="radio" name="vigilante_turno" value="Vicente Nuñez Robledo" class="h-4 w-4 text-blue-600">
+              <span>Vicente Nuñez Robledo</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 1. Inicio de Turno y Preparación -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">INICIO DE TURNO Y PREPARACIÓN</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Llegada puntual y registro de asistencia.</span>
+              <input type="checkbox" name="llegada_puntual" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Limpieza inicial del área de trabajo (Caseta, pasillos y puertas de cristal).</span>
+              <input type="checkbox" name="limpieza_area" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Revisa y reportar el estado de los equipos (Radio, linternas, etc.).</span>
+              <input type="checkbox" name="revisar_equipos" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. Control de Acceso -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">CONTROL DE ACCESO (Personas, visitas, vehículos)</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Registrar visitantes.</span>
+              <input type="checkbox" name="registrar_visitantes" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Negar acceso a personas inconvenientes o en estado inconveniente.</span>
+              <input type="checkbox" name="negar_acceso_inconvenientes" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Usar láser para advertencias externas.</span>
+              <input type="checkbox" name="usar_laser_advertencias" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. Revisión de Mercancía y Equipo -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">REVISIÓN DE MERCANCÍA Y EQUIPO</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Verificar formularios de autorización de salida/entrada.</span>
+              <input type="checkbox" name="verificar_formularios" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Revisar documentos de entrega/recepción.</span>
+              <input type="checkbox" name="revisar_documentos_entrega" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Marcar mercancía con plumón especial (Abarrotes/Medicamento).</span>
+              <input type="checkbox" name="marcar_mercancia" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. Monitoreo de CCTV y Vigilancia Perimetral -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">MONITOREO DE CCTV Y VIGILANCIA PERIMETRAL</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Monitoreo continuo de cámaras de seguridad.</span>
+              <input type="checkbox" name="monitoreo_camaras" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Verificar apagado de luces y equipos.</span>
+              <input type="checkbox" name="verificar_apagado_luces" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. Rondines de Seguridad -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">RONDINES DE SEGURIDAD</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Recorrido interno (No olvides escanear QR).</span>
+              <input type="checkbox" name="recorrido_interno" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Recorrido externo (No olvides escanear QR).</span>
+              <input type="checkbox" name="recorrido_externo" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Ronda nocturna 10pm (No olvides escanear QR).</span>
+              <input type="checkbox" name="ronda_nocturna_10pm" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 6. Revisión de Almacén y Lockers -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">REVISIÓN DE ALMACÉN Y LOCKERS</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Revisión mensual de lockers.</span>
+              <input type="checkbox" name="revision_mensual_lockers" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Control de sellos de seguridad.</span>
+              <input type="checkbox" name="control_sellos_seguridad" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Inventario de equipo clave.</span>
+              <input type="checkbox" name="inventario_equipo_clave" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 7. Reporte de Novedades y Emergencias -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">REPORTE DE NOVEDADES Y EMERGENCIAS</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Registrar todas las novedades en bitácora.</span>
+              <input type="checkbox" name="registrar_bitacora" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Documentar siniestros e incidentes graves.</span>
+              <input type="checkbox" name="documentar_siniestros" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Llamar números de emergencia si es necesario.</span>
+              <input type="checkbox" name="llamar_emergencia" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Notificar al jefe de departamento ante siniestros.</span>
+              <input type="checkbox" name="notificar_jefe_departamento" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- 8. Entrega de Turno -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-blue-900 border-b pb-1 mb-2">ENTREGA DE TURNO</h3>
+          <div class="space-y-2">
+            <label class="flex justify-between items-center text-sm">
+              <span>• Actualizar bitácora final.</span>
+              <input type="checkbox" name="actualizar_bitacora_final" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Entregar equipos y llaves.</span>
+              <input type="checkbox" name="entregar_equipos_llaves" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Informar de pendientes al vigilante entrante.</span>
+              <input type="checkbox" name="informar_pendientes" class="h-5 w-5 chk-item">
+            </label>
+            <label class="flex justify-between items-center text-sm">
+              <span>• Realizar y firmar documento de entrega.</span>
+              <input type="checkbox" name="realizar_firmar_documento" class="h-5 w-5 chk-item">
+            </label>
+          </div>
+        </div>
+
+        <!-- Firmas y Nombres -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+          <div>
+            <label class="block text-sm font-bold text-gray-700">Vigilante Saliente:</label>
+            <input type="text" id="vigilante_saliente" class="w-full p-2 border rounded mt-1" placeholder="Nombre completo" />
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700">Vigilante Entrante:</label>
+            <input type="text" id="vigilante_entrante" class="w-full p-2 border rounded mt-1" placeholder="Nombre completo" />
+          </div>
+        </div>
+
+        <button type="submit" id="btn-guardar" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded shadow transition">
+          Guardar Check List
+        </button>
+      </form>
+    </div>
+
+    <!-- SECCIÓN HISTORIAL -->
+    <div id="vista-historial" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-gray-800">Historial de Checklists Registrados</h2>
+        <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded text-sm shadow">
+          📊 Descargar Excel (.CSV)
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-600 border">
+          <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+            <tr>
+              <th class="p-3 border">Fecha / Hora</th>
+              <th class="p-3 border">Vigilante Turno</th>
+              <th class="p-3 border">Saliente / Entrante</th>
+              <th class="p-3 border">Puntos Completados</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-historial">
+            <!-- Los registros se cargan dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = "https://TU_PROYECTO.supabase.co"; 
+    const SUPABASE_ANON_KEY = "TU_LLAVE_ANONIMA";
+    
+    let supabaseClient = null;
+    if (SUPABASE_URL !== "https://TU_PROYECTO.supabase.co") {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    let datosHistorial = [];
+
+    // Inicializar fechas por defecto
+    document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('hora').value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    function cambiarVista(vista) {
+      const btnForm = document.getElementById('btn-formulario');
+      const btnHist = document.getElementById('btn-historial');
+      const divForm = document.getElementById('vista-formulario');
+      const divHist = document.getElementById('vista-historial');
+
+      if (vista === 'formulario') {
+        divForm.classList.remove('hidden');
+        divHist.classList.add('hidden');
+        btnForm.className = "px-4 py-2 rounded text-sm font-semibold bg-blue-800 text-white";
+        btnHist.className = "px-4 py-2 rounded text-sm font-semibold bg-gray-200 text-gray-700";
+      } else {
+        divForm.classList.add('hidden');
+        divHist.classList.remove('hidden');
+        btnHist.className = "px-4 py-2 rounded text-sm font-semibold bg-blue-800 text-white";
+        btnForm.className = "px-4 py-2 rounded text-sm font-semibold bg-gray-200 text-gray-700";
+        cargarHistorial();
+      }
+    }
+
+    async function guardarRegistro(e) {
+      e.preventDefault();
+      
+      const radioVigilante = document.querySelector('input[name="vigilante_turno"]:checked');
+      if (!radioVigilante) {
+        alert("Por favor seleccione el vigilante en turno.");
+        return;
+      }
+
+      const registro = {
+        fecha: document.getElementById('fecha').value,
+        hora: document.getElementById('hora').value,
+        vigilante_turno: radioVigilante.value,
+        vigilante_saliente: document.getElementById('vigilante_saliente').value,
+        vigilante_entrante: document.getElementById('vigilante_entrante').value,
+      };
+
+      // Recopilar checkboxes
+      const checkboxes = document.querySelectorAll('.chk-item');
+      checkboxes.forEach(chk => {
+        registro[chk.name] = chk.checked;
+      });
+
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient.from('checklist_vigilancia').insert([registro]);
+        if (error) {
+          alert("Error en Supabase: " + error.message);
+          return;
+        }
+      } else {
+        // Modo demostración local si no se configuran llaves
+        datosHistorial.unshift(registro);
+      }
+
+      alert("✅ Check list guardado con éxito.");
+      document.getElementById('checklist-form').reset();
+      document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+    }
+
+    async function cargarHistorial() {
+      const tbody = document.getElementById('tabla-historial');
+      tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Cargando registros...</td></tr>';
+
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient.from('checklist_vigilancia').select('*').order('created_at', { ascending: false });
+        if (!error && data) datosHistorial = data;
+      }
+
+      if (datosHistorial.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No hay registros aún.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      datosHistorial.forEach(item => {
+        const totalPuntos = 25; // Cantidad de preguntas
+        let cumplidos = 0;
+        Object.keys(item).forEach(k => { if(item[k] === true) cumplidos++; });
+
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-gray-50";
+        tr.innerHTML = `
+          <td class="p-3 border font-medium text-gray-900">${item.fecha} ${item.hora}</td>
+          <td class="p-3 border">${item.vigilante_turno}</td>
+          <td class="p-3 border text-xs">
+            <div><b>Saliente:</b> ${item.vigilante_saliente || '-'}</div>
+            <div><b>Entrante:</b> ${item.vigilante_entrante || '-'}</div>
+          </td>
+          <td class="p-3 border font-semibold text-blue-700">${cumplidos} / ${totalPuntos} cumplidos</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportarExcel() {
+      if (datosHistorial.length === 0) {
+        alert("No hay datos para exportar.");
+        return;
+      }
+      const headers = Object.keys(datosHistorial[0]).join(",");
+      const rows = datosHistorial.map(row => 
+        Object.values(row).map(val => typeof val === 'boolean' ? (val ? "SI" : "NO") : `"${val || ''}"`).join(",")
+      );
+      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers, ...rows].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Checklist_Vigilancia.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
