@@ -265,18 +265,14 @@
   </div>
 
   <script>
-    // CONFIGURACIÓN DE SUPABASE
-    const SUPABASE_URL = "https://TU_PROYECTO.supabase.co"; 
-    const SUPABASE_ANON_KEY = "TU_LLAVE_ANONIMA";
+    // CREDENCIALES CONFIGURADAS DE SUPABASE
+    const SUPABASE_URL = "https://waueklmhwysbeqmbbmve.supabase.co"; 
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhdWVrbG1od3lzYmVxbWJibXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTY0MzYsImV4cCI6MjEwNzQ5MjQzNn0.tRM1m_2Atx8bujtk7udNTF8oE6nbnXSHFtQJXmaqV3E";
     
-    let supabaseClient = null;
-    if (SUPABASE_URL !== "https://TU_PROYECTO.supabase.co") {
-      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
-
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let datosHistorial = [];
 
-    // Inicializar fechas por defecto
+    // Inicializar fecha y hora actuales
     document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
     document.getElementById('hora').value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
@@ -309,6 +305,10 @@
         return;
       }
 
+      const btnGuardar = document.getElementById('btn-guardar');
+      btnGuardar.disabled = true;
+      btnGuardar.innerText = "Guardando en Supabase...";
+
       const registro = {
         fecha: document.getElementById('fecha').value,
         hora: document.getElementById('hora').value,
@@ -317,53 +317,56 @@
         vigilante_entrante: document.getElementById('vigilante_entrante').value,
       };
 
-      // Recopilar checkboxes
+      // Recopilar respuestas de los checkboxes
       const checkboxes = document.querySelectorAll('.chk-item');
       checkboxes.forEach(chk => {
         registro[chk.name] = chk.checked;
       });
 
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient.from('checklist_vigilancia').insert([registro]);
-        if (error) {
-          alert("Error en Supabase: " + error.message);
-          return;
-        }
-      } else {
-        // Modo demostración local si no se configuran llaves
-        datosHistorial.unshift(registro);
-      }
+      const { data, error } = await supabaseClient.from('checklist_vigilancia').insert([registro]);
 
-      alert("✅ Check list guardado con éxito.");
-      document.getElementById('checklist-form').reset();
-      document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+      btnGuardar.disabled = false;
+      btnGuardar.innerText = "Guardar Check List";
+
+      if (error) {
+        alert("Error al guardar en Supabase: " + error.message);
+      } else {
+        alert(" Check list guardado con éxito en Supabase.");
+        document.getElementById('checklist-form').reset();
+        document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+        document.getElementById('hora').value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      }
     }
 
     async function cargarHistorial() {
       const tbody = document.getElementById('tabla-historial');
-      tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Cargando registros...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Cargando registros desde Supabase...</td></tr>';
 
-      if (supabaseClient) {
-        const { data, error } = await supabaseClient.from('checklist_vigilancia').select('*').order('created_at', { ascending: false });
-        if (!error && data) datosHistorial = data;
+      const { data, error } = await supabaseClient.from('checklist_vigilancia').select('*').order('created_at', { ascending: false });
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Error al cargar historial: ${error.message}</td></tr>`;
+        return;
       }
 
+      datosHistorial = data || [];
+
       if (datosHistorial.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No hay registros aún.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No hay registros aún en la base de datos.</td></tr>';
         return;
       }
 
       tbody.innerHTML = '';
       datosHistorial.forEach(item => {
-        const totalPuntos = 25; // Cantidad de preguntas
+        const totalPuntos = 25;
         let cumplidos = 0;
         Object.keys(item).forEach(k => { if(item[k] === true) cumplidos++; });
 
         const tr = document.createElement('tr');
         tr.className = "border-b hover:bg-gray-50";
         tr.innerHTML = `
-          <td class="p-3 border font-medium text-gray-900">${item.fecha} ${item.hora}</td>
-          <td class="p-3 border">${item.vigilante_turno}</td>
+          <td class="p-3 border font-medium text-gray-900">${item.fecha || ''} ${item.hora || ''}</td>
+          <td class="p-3 border">${item.vigilante_turno || '-'}</td>
           <td class="p-3 border text-xs">
             <div><b>Saliente:</b> ${item.vigilante_saliente || '-'}</div>
             <div><b>Entrante:</b> ${item.vigilante_entrante || '-'}</div>
@@ -387,7 +390,7 @@
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Checklist_Vigilancia.csv`);
+      link.setAttribute("download", `Checklist_Vigilancia_${new Date().toISOString().slice(0,10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
